@@ -101,7 +101,7 @@ resource "aws_instance" "logistician" {
   }
 
   provisioner "local-exec" {
-    command = "echo \"\nTHE EXPERIMENT IS DONE. You can run `terraform destroy ${path.module}` now.\""
+    command = "echo \"\nTHE EXPERIMENT IS DONE. You can run 'terraform destroy ${path.module}' now.\""
   }
     
   # provisioner on destroy
