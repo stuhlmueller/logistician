@@ -89,12 +89,17 @@ resource "aws_instance" "logistician" {
 
   provisioner "remote-exec" {
     inline = [
+      "sudo mkdir /data",
       "export DOCKER_REPOSITORY=\"${file("${path.module}/../../config/docker/repository.txt")}\"",      
       "export DOCKER_USER_ID=\"${file("${path.module}/../../config/docker/username.txt")}\"",
       "sudo docker pull $DOCKER_USER_ID/$DOCKER_REPOSITORY:${var.experiment_name}",
-      "sudo docker run -e OPTIONS=\"1 2\" -it $DOCKER_USER_ID/$DOCKER_REPOSITORY:${var.experiment_name}",
+      "sudo docker run -v /data:/data -e OPTIONS=\"1 2\" -it $DOCKER_USER_ID/$DOCKER_REPOSITORY:${var.experiment_name}",
     ]
-  }  
+  }
+
+  provisioner "local-exec" {
+    command = "echo \"\nTHE EXPERIMENT IS DONE. You can run `terraform destroy ${path.module}` now.\""
+  }
     
   # provisioner on destroy
 
