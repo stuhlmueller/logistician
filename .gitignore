@@ -7,3 +7,4 @@ config/docker/repository.txt
 todo.txt
 ip-addresses.txt
 *.lock.info
+data

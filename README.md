@@ -36,7 +36,7 @@ Features:
 
 3. Provide [AWS Credentials for Terraform](https://www.terraform.io/docs/providers/aws/) via [environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-environment) or a [credentials file](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-config-files)
 
-    For example, you can find your access and secret key following [these instructions](https://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html) and, if you're on Linux or Mac, create a file `~/.aws/credentials` that looks like this:
+    For example, you can find your access and secret key following [these instructions](https://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html) and, if you're on Linuux or Mac, create a file `~/.aws/credentials` that looks like this:
     
     ```ini
     [default]
@@ -54,6 +54,11 @@ Features:
 
 6. Store Docker info by running `./scripts/configure-docker` in the Logistician root directory
 
+7. Add `/path/to/logistician/bin` to your `$PATH`, e.g. by running this in the root directory:
+
+   ```sh
+   export PATH=`pwd`/bin:$PATH
+   ```
 
 ### Test
 
