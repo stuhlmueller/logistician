@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ../config/ssh-keys/ && pwd )"
+
+if [ ! -f "$DIR/ssh-key" ]; then
+  ssh-keygen -t rsa -b 4096 -f "$DIR/ssh-key" -P "";
+else
+  echo "Key already exists."
+fi
