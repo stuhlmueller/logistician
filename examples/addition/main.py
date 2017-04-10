@@ -18,7 +18,7 @@ def main():
         except IOError:
             print("Error writing result to {0}".format(filename))
         else:
-            f.write(result)
+            f.write(str(result))
             f.close()
 
 if __name__ == "__main__":    
