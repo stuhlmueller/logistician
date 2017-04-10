@@ -10,7 +10,7 @@ Features:
 
 - **Fast local development loop** 
 
-    For local development, Logistician directly uses code in a local directory in order to make it easy to test changes without committing to repositories or rebuilding docker images.
+    For local development, Logistician directly uses code from your local project directory in order to make it easy to test changes without committing to repositories or constantly rebuilding docker images.
     
 - **Reproducible experiments**
 
