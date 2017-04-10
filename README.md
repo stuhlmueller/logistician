@@ -54,7 +54,7 @@ Features:
 
 6. Store Docker info by running `./scripts/configure-docker` in the Logistician root directory
 
-7. Add `/path/to/logistician/bin` to your `$PATH`, e.g. by running this in the root directory:
+7. Add `/path/to/logistician/bin` to your `$PATH`, e.g. by running this in the Logistician root directory:
 
    ```sh
    export PATH=`pwd`/bin:$PATH
@@ -77,8 +77,11 @@ docker run -v `pwd`:/project -e OPTIONS="1 2" -it addition-expt-1
 # Run locally (cloned from Github)
 docker run -e OPTIONS="1 2" -it addition-expt-1
 
-# Run remotely on AWS (this will take a while)
+# Run remotely on AWS, retrieve the data, shut down (this will take a while)
+cd examples/addition/experiments/1
 terraform apply ../../../../terraform/aws/
+logistician-sync
+terraform destroy ../../../../terraform/aws/
 ```
 
 Note that running on AWS will incur (small) costs.
@@ -146,6 +149,12 @@ git add -A; git commit -m "Created experiment 1"; git push
 
 # Run experiment on AWS
 terraform apply /path/to/logistician/terraform/aws/
+
+# Sync data from AWS to experiment directory
+logistician-sync
+
+# Shut down AWS instances
+terraform destroy /path/to/logistician/terraform/aws/
 ```
 
 ## FAQ
