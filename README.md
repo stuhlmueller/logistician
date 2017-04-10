@@ -30,13 +30,11 @@ Features:
 
 1. Install [Docker](https://www.docker.com/community-edition) and log in using `docker login`
 
-    Logistician will use a Docker repository called `experiments` to store all images.
-
 2. Install [Terraform](https://www.terraform.io/)
 
 3. Provide [AWS Credentials for Terraform](https://www.terraform.io/docs/providers/aws/) via [environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-environment) or a [credentials file](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-config-files)
 
-    For example, you can find your access and secret key following [these instructions](https://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html) and, if you're on Linuux or Mac, create a file `~/.aws/credentials` that looks like this:
+    For example, you can find your access and secret key following [these instructions](https://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html) and, if you're on Linux or Mac, create a file `~/.aws/credentials` that looks like this:
     
     ```ini
     [default]
@@ -180,7 +178,7 @@ ssh -i /path/to/logistician/config/ssh-keys/ssh-key ubuntu@54.153.54.33
 Logistician currently does not support...
 
 - Private git repositories
-- Private Docker registries
+- Docker registries other than public Docker Hub
 - Cloud providers other than AWS
 
 ## To discuss
