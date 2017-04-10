@@ -64,7 +64,7 @@ To make sure everything is set up correctly, try running the example experiment:
 cd logistician
 
 # Build Docker image
-docker build -t addition-expt-1 example-projects/addition/experiments/1
+docker build -t addition-expt-1 examples/addition/experiments/1
 
 # Run locally (directly using project directory)
 docker run -v `pwd`:/project -e OPTIONS="1 2" -it addition-expt-1
@@ -96,7 +96,7 @@ The following assumes that there is an `experiments` folder in `my-project`, but
 
 Creating a new experiment with name `my-new-experiment`:
 
-1. Copy `logistician/example-projects/addition/experiments/1` to `my-project/experiments/1`
+1. Copy `logistician/examples/addition/experiments/1` to `my-project/experiments/1`
 2. Edit `my-project/experiments/1/Dockerfile` to reflect your experimental setup
 
 Make sure to preserve the switch in `CMD` that supports both local and remote project directories.
