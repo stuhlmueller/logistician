@@ -90,6 +90,9 @@ resource "aws_instance" "logistician" {
   provisioner "remote-exec" {
     inline = [
       "sudo mkdir /data",
+      "sudo mkdir /data/logs",
+      "sudo mkdir /data/config",
+      "sudo mkdir /data/results",      
       "export DOCKER_REPOSITORY=\"${file("${path.module}/../../config/docker/repository.txt")}\"",      
       "export DOCKER_USER_ID=\"${file("${path.module}/../../config/docker/username.txt")}\"",
       "sudo docker pull $DOCKER_USER_ID/$DOCKER_REPOSITORY:${var.experiment_name}",

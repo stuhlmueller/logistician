@@ -3,6 +3,7 @@ FROM python:3
 ENV project_git_url https://github.com/stuhlmueller/logistician.git
 ENV project_main_file examples/addition/main.py
 
+# Placeholders in case this Docker image isn't mounted with an appropriate volume at /data
 RUN mkdir /data
 RUN mkdir /data/logs
 RUN mkdir /data/config
