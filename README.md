@@ -1,4 +1,4 @@
-**This project is work-in-progress. We don't recommend that you try to use it just yet.**
+**This project is work-in-progress. I don't recommend that you try to use it just yet.**
 
 ----
 
