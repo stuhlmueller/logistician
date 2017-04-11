@@ -16,6 +16,11 @@ variable aws_ami_user {
 
 variable experiment_name {}
 
+variable aws_access_key {}
+variable aws_secret_key {}
+variable docker_username {}
+variable docker_repository {}
+
 
 resource "null_resource" "build_docker_image" {
   provisioner "local-exec" {
@@ -26,10 +31,8 @@ resource "null_resource" "build_docker_image" {
 resource "null_resource" "push_docker_image" {
   provisioner "local-exec" {
     command = <<EOF
-      export DOCKER_USER_ID="${file("${path.module}/../../config/docker/username.txt")}" &&
-      export DOCKER_REPOSITORY="${file("${path.module}/../../config/docker/repository.txt")}" && 
-      docker tag ${var.experiment_name} $DOCKER_USER_ID/$DOCKER_REPOSITORY:${var.experiment_name} && 
-      docker push $DOCKER_USER_ID/$DOCKER_REPOSITORY:${var.experiment_name}
+      docker tag ${var.experiment_name} ${var.docker_username}/${var.docker_repository}:${var.experiment_name} && 
+      docker push ${var.docker_username}/${var.docker_repository}:${var.experiment_name}
     EOF
   }
   depends_on = ["null_resource.build_docker_image"]
@@ -41,7 +44,7 @@ provider "aws" {
 
 resource "aws_key_pair" "logistician" {
   key_name   = "logistician-ssh-key"
-  public_key = "${file("${path.module}/../../config/ssh-keys/ssh-key.pub")}"
+  public_key = "${file("~/.logistician/ssh-key.pub")}"
 }
 
 resource "aws_security_group" "logistician" {
@@ -75,12 +78,12 @@ resource "aws_instance" "logistician" {
   connection {
     type        = "ssh"
     user        = "${var.aws_ami_user}"
-    private_key = "${file("${path.module}/../../config/ssh-keys/ssh-key")}"
+    private_key = "${file("~/.logistician/ssh-key")}"
     agent       = false
   }  
 
   provisioner "local-exec" {
-    command = "echo ${aws_instance.logistician.public_ip} > ip-addresses.txt"
+    command = "echo '{ \"ip\": \"${aws_instance.logistician.public_ip}\" }' > ip-addresses.json"
   }
   
   provisioner "remote-exec" {
@@ -93,18 +96,20 @@ resource "aws_instance" "logistician" {
       "sudo mkdir /data/logs",
       "sudo mkdir /data/config",
       "sudo mkdir /data/results",      
-      "export DOCKER_REPOSITORY=\"${file("${path.module}/../../config/docker/repository.txt")}\"",      
-      "export DOCKER_USER_ID=\"${file("${path.module}/../../config/docker/username.txt")}\"",
-      "sudo docker pull $DOCKER_USER_ID/$DOCKER_REPOSITORY:${var.experiment_name}",
-      "sudo docker run -v /data:/data -e OPTIONS=\"1 2\" -it $DOCKER_USER_ID/$DOCKER_REPOSITORY:${var.experiment_name}",
+      "sudo docker pull ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
+      "sudo docker run -v /data:/data -e OPTIONS=\"1 2\" -it ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
     ]
   }
 
   provisioner "local-exec" {
-    command = "echo \"\nTHE EXPERIMENT IS DONE. You can run 'terraform destroy ${path.module}' now.\""
+    command = "echo \"THE EXPERIMENT IS DONE.\""
   }
     
   # provisioner on destroy
 
   depends_on = ["null_resource.push_docker_image"]
 }
+
+
+# Add a resource that depends on all aws instances being done,
+# print out final message

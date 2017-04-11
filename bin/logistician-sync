@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
-USERNAME=`cat terraform.tfvars | grep aws_ami_user | sed -e 's/aws_ami_user *= *"\(.*\)"/\1/'`
-IP="`cat ip-addresses.txt`"
-
-ssh -o "StrictHostKeyChecking no" -i "$DIR/config/ssh-keys/ssh-key" $USERNAME@$IP "sudo bash -c 'docker logs \`docker ps -aq | head -n 1\` > /data/logs/docker.txt'"
-
-rsync -azvv -e "ssh -i $DIR/config/ssh-keys/ssh-key" $USERNAME@$IP:/data .

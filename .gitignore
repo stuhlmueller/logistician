@@ -1,11 +1,7 @@
 terraform.tfstate
 terraform.tfstate.backup
-config/ssh-keys/ssh-key
-config/ssh-keys/ssh-key.pub
-config/docker/username.txt
-config/docker/repository.txt
 todo.txt
-ip-addresses.txt
+ip-addresses.json
 *.lock.info
 data
 *.pyc

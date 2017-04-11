@@ -22,7 +22,7 @@ Features:
 
 - **Transparently built on standard tools**
 
-    Logistician mostly doesn't provide its own command-line tools. By directly working with Docker and Terraform commands, you have access to all of the functionality these tools provide.
+    Logistician is a thin wrapper around Docker and Terraform and prints out all commands it issues. You can always switch to managing the containers and cloud instances using these native tools if additional functionality is needed.
 
 ## Installation
 
@@ -32,54 +32,37 @@ Features:
 
 2. Install [Terraform](https://www.terraform.io/)
 
-3. Provide [AWS Credentials for Terraform](https://www.terraform.io/docs/providers/aws/) via [environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-environment) or a [credentials file](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-config-files)
-
-    For example, you can find your access and secret key following [these instructions](https://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html) and, if you're on Linux or Mac, create a file `~/.aws/credentials` that looks like this:
-    
-    ```ini
-    [default]
-    aws_access_key_id=AKIAIOSFODNN7EXAMPLE
-    aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-    ```
-
-4. Clone Logistician: 
+3. Install and configure Logistician:
 
     ```sh
     git clone https://github.com/stuhlmueller/logistician.git
+    cd logistician
+    pip install .
+    logistician setup
     ```
-
-5. Generate SSH key by running `./scripts/generate-ssh-key` in the Logistician root directory
-
-6. Store Docker info by running `./scripts/configure-docker` in the Logistician root directory
-
-7. Add `/path/to/logistician/bin` to your `$PATH`, e.g. by running this in the Logistician root directory:
-
-   ```sh
-   export PATH=`pwd`/bin:$PATH
-   ```
 
 ### Test
 
 To make sure everything is set up correctly, try running the example experiment:
 
 ```sh
-# Go to project folder
-cd logistician
+# Go to experiment folder
+cd logistician/examples/addition/experiments/1
 
 # Build Docker image
-docker build -t addition-expt-1 examples/addition/experiments/1
+logistician build
 
 # Run locally (directly using project directory)
-docker run -v `pwd`:/project -e OPTIONS="1 2" -it addition-expt-1
+logistician run --no-volume -o "1 2"
 
 # Run locally (cloned from Github)
-docker run -e OPTIONS="1 2" -it addition-expt-1
+logistician run -o "1 2"
 
 # Run remotely on AWS, retrieve the data, shut down (this will take a while)
 cd examples/addition/experiments/1
-terraform apply ../../../../terraform/aws/
-logistician-sync
-terraform destroy ../../../../terraform/aws/
+logistician deploy
+logistician sync
+logistician terminate
 ```
 
 Note that running on AWS will incur (small) costs.
@@ -114,18 +97,18 @@ Make sure to preserve the switch in `CMD` that supports both local and remote pr
 cd /home/jane/my-project
 
 # Build Docker image (once, and whenever external dependencies change)
-docker build -t my-experiment-1 experiments/1
+logistician build experiments/1
 
 # Make changes to files in my-project
 
 # Run the experiment script with command line args "foo bar=baz"
-docker run -v `pwd`:/project -e OPTIONS="foo bar=baz" -it my-experiment-1
+logistician run -o "foo bar=baz" experiments/1
 ```
 
 To interact with the dev environment, try this:
 
 ```sh
-docker run -v `pwd`:/project -it my-first-experiment bash
+docker shell
 cd /project
 ```
 
@@ -140,19 +123,19 @@ cd /home/jane/my-project/
 # Go to experiment folder
 cd experiments/1
 
-# Update parameters.tfvars to reflect parameters we want to run in the cloud
+# Update parameters.json to reflect parameters we want to run in the cloud
 
 # Commit & push to remote Git repository
 git add -A; git commit -m "Created experiment 1"; git push
 
 # Run experiment on AWS
-terraform apply /path/to/logistician/terraform/aws/
+terraform deploy
 
 # Sync data from AWS to experiment directory
-logistician-sync
+logistician sync
 
 # Shut down AWS instances
-terraform destroy /path/to/logistician/terraform/aws/
+logistician terminate
 ```
 
 ## FAQ
@@ -163,14 +146,14 @@ Add `{"max-concurrent-uploads": 1}` to your `daemon.json`. If you're on Mac, you
 
 **What should I do if something goes wrong during `terraform apply`?**
 
-Run `terraform destroy /path/to/logistician/terraform/aws/` in the experiment directory to clean up.
+Run `terraform destroy -var-file="./parameters.json" -var-file="~/.logistician/config.json" /path/to/logistician/terraform/aws/` in the experiment directory to clean up.
 
 **How can I log into the cloud instances manually?**
 
 Logistician saves the instance IP addresses in `ip-addresses.txt` in the experiment directory. Using these, you can log in using SSH:
     
 ```sh
-ssh -i /path/to/logistician/config/ssh-keys/ssh-key ubuntu@54.153.54.33
+ssh -i ~/.logistician/ssh-key ubuntu@54.153.54.33
 ```
 
 ## Limitations
@@ -184,5 +167,4 @@ Logistician currently does not support...
 ## To discuss
 
 - recording experimental setup (git commit id) and results (terminal log, files)
-- shutting down instances
 - for docker builds that clone from github, either need to point to particular commits (preferable) or rebuild with --no-cache
