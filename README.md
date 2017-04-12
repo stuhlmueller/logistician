@@ -53,13 +53,12 @@ cd logistician/examples/addition/experiments/1
 logistician build
 
 # Run locally (directly using project directory)
-logistician run --no-volume -o "1 2"
-
-# Run locally (cloned from Github)
 logistician run -o "1 2"
 
+# Run locally (cloned from Github)
+logistician run --no-volume -o "1 2"
+
 # Run remotely on AWS, retrieve the data, shut down (this will take a while)
-cd examples/addition/experiments/1
 logistician deploy
 logistician sync
 logistician terminate
@@ -146,7 +145,7 @@ Add `{"max-concurrent-uploads": 1}` to your `daemon.json`. If you're on Mac, you
 
 **What should I do if something goes wrong during `terraform apply`?**
 
-Run `terraform destroy -var-file="./parameters.json" -var-file="~/.logistician/config.json" /path/to/logistician/terraform/aws/` in the experiment directory to clean up.
+Run `logistician terminate` in the experiment directory to clean up.
 
 **How can I log into the cloud instances manually?**
 

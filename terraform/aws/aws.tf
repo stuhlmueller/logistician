@@ -16,16 +16,27 @@ variable aws_ami_user {
 
 variable experiment_name {}
 
+variable experiment_conditions {
+  default = []
+}
+
 variable aws_access_key {}
 variable aws_secret_key {}
 variable docker_username {}
 variable docker_repository {}
 
 
+resource "null_resource" "reset" {
+  provisioner "local-exec" {
+    command = "> machines.txt"
+  }
+}
+
 resource "null_resource" "build_docker_image" {
   provisioner "local-exec" {
     command = "docker build -t ${var.experiment_name} ."
   }
+  depends_on = ["null_resource.reset"]
 }
 
 resource "null_resource" "push_docker_image" {
@@ -75,6 +86,8 @@ resource "aws_instance" "logistician" {
   key_name      = "logistician-ssh-key"
   vpc_security_group_ids = ["${aws_security_group.logistician.id}"]
 
+  count = "${length(var.experiment_conditions)}"
+
   connection {
     type        = "ssh"
     user        = "${var.aws_ami_user}"
@@ -83,8 +96,8 @@ resource "aws_instance" "logistician" {
   }  
 
   provisioner "local-exec" {
-    command = "echo '{ \"ip\": \"${aws_instance.logistician.public_ip}\" }' > ip-addresses.json"
-  }
+    command = "echo ${self.public_ip}, ${element(var.experiment_conditions, count.index)} >> machines.txt"
+  }  
   
   provisioner "remote-exec" {
     script = "${path.module}/../../scripts/setup-docker"
@@ -97,7 +110,7 @@ resource "aws_instance" "logistician" {
       "sudo mkdir /data/config",
       "sudo mkdir /data/results",      
       "sudo docker pull ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
-      "sudo docker run -v /data:/data -e OPTIONS=\"1 2\" -it ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
+      "sudo docker run -v /data:/data -e OPTIONS=\"${element(var.experiment_conditions, count.index)}\" -it ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
     ]
   }
 

@@ -88,27 +88,34 @@ def sync(experiment_path):
     Sync all data from cloud to local machine
     """
     # Load IP addresses
-    ips_filename = os.path.join(experiment_path, "ip-addresses.json")
-    if not os.path.exists(ips_filename):
-        click.echo("IP address file {0} does not exist. Can't sync.".format(ips_filename))
+    machines_filename = os.path.join(experiment_path, "machines.txt")
+    if not os.path.exists(machines_filename):
+        click.echo("Machine file {0} does not exist. Can't sync.".format(machines_filename))
         return
-    f = open(ips_filename)
-    ip = json.load(f)["ip"]
+    f = open(machines_filename)
+    machines = [line.strip().split(", ") for line in f.read().strip().split("\n")]
     f.close()
 
     # Load AWS AMI user
     params = load_params(experiment_path)
     aws_ami_user = params["aws_ami_user"]
 
-    remote_address = "{0}@{1}".format(aws_ami_user, ip)
-    click.echo("Syncing {0} to {1}".format(remote_address, experiment_path))
+    # Create data folder if it doesn't exist
+    verbose_call(["mkdir", "-p", os.path.join(experiment_path, "data/")])    
+    
+    for (ip, condition) in machines:
 
-    # Copy latest Docker logs to remote data directory
-    verbose_call(["ssh", "-o", "StrictHostKeyChecking no", "-i", "~/.logistician/ssh-key", remote_address,
-                  "sudo bash -c 'docker logs `docker ps -aq | head -n 1` > /data/logs/docker.txt'"])
-
-    # Retrieve remote data directory
-    verbose_call(["rsync", "-azvv", "-e", "ssh -i ~/.logistician/ssh-key", "{0}:/data".format(remote_address), experiment_path])
+        remote_address = "{0}@{1}".format(aws_ami_user, ip)
+        local_path = os.path.join(experiment_path, "data/", condition)
+        
+        click.echo("Syncing {0} to {1}".format(remote_address, local_path))
+        
+        # Copy latest Docker logs to remote data directory
+        verbose_call(["ssh", "-o", "StrictHostKeyChecking no", "-i", "~/.logistician/ssh-key", remote_address,
+                      "sudo bash -c 'docker logs `docker ps -aq | head -n 1` > /data/logs/docker.txt'"])
+        
+        # Retrieve remote data directory
+        verbose_call(["rsync", "-azvv", "-e", "ssh -i ~/.logistician/ssh-key", "{0}:/data/".format(remote_address), local_path])
 
     click.echo("Syncing done.")
 
@@ -175,6 +182,9 @@ def shell(experiment_path, volume=True):
     click.echo("Shell exited.")
 
 
+def terraform_command():
+    pass
+    
 @click.command()
 @click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
                 default=lambda: os.getcwd())

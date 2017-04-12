@@ -4,5 +4,12 @@
   "aws_ami": "ami-e9643d89",
   "aws_ami_comment": "ubuntu 16.10, us-west-1",
   "aws_ami_user": "ubuntu",
-  "experiment_name": "addition-expt-1"
+  
+  "experiment_name": "addition-expt-1",
+  "experiment_conditions": [
+    "1 1",
+    "1 2",
+    "2 1",
+    "2 2"
+  ]
 }
