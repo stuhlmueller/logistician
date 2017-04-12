@@ -6,7 +6,76 @@
 
 Logistician makes it easy to prototype computational experiments locally and to deploy them to the cloud at scale. 
 
-Features:
+## What it does
+
+You have a project, let's say it's called `adversarial-rnn`.
+
+```sh
+# Go to project folder
+cd /home/jane/adversarial-rnn
+
+# Make sub-folder for experiments
+mkdir experiments && cd experiments
+
+# Create a new experiment
+logistician create rnn-experiment-1
+```
+
+Logistician then asks you some questions about your experiment:
+
+```
+This will interactively create a new experiment.
+
+Experiment script relative to project root:  python src/run-rnn.py
+Remote Git repository URL:                   https://github.com/jane/adversarial-rnn.git
+
+Experiment created.
+```
+
+Now the experiments folder contains a sub-folder `rnn-experiment-1` with two files:
+- `Dockerfile` describes the software environment for your experiment
+- `parameters.json` describes the cloud machine setup (instance type, region, etc) and experiment conditions
+
+These two files are sufficient to run your experiment locally and in the cloud.
+
+To run it locally, passing arguments to your experiment script:
+
+```sh
+logistician run ./rnn-experiment-1 -o "--learning-rate 0.01 --optimizer adam"
+```
+
+Once you're ready to run your experiment in the cloud, you edit `parameters.json` to add the arguments for all conditions:
+
+```json
+{
+  "experiment_conditions": [
+    "--learning-rate 0.1 --optimizer adam",
+    "--learning-rate 0.01 --optimizer adam",
+    "--learning-rate 0.001 --optimizer adam"
+  ]
+}
+```
+
+Create three AWS instances for the conditions above and run one condition on each:
+
+```sh
+logistician deploy ./rnn-experiment-1
+```
+
+Sync the logs and results from the instances to your local experiments folder:
+
+```sh
+logistician sync ./rnn-experiment-1
+```
+
+Shut down the instances:
+
+```sh
+logistician terminate ./rnn-experiment-1
+```
+
+
+## Features
 
 - **Fast local development loop** 
 
@@ -56,7 +125,7 @@ logistician build
 logistician run -o "1 2"
 
 # Run locally (cloned from Github)
-logistician run --no-volume -o "1 2"
+logistician run --clone -o "1 2"
 
 # Run remotely on AWS, retrieve the data, shut down (this will take a while)
 logistician deploy
@@ -128,7 +197,7 @@ cd experiments/1
 git add -A; git commit -m "Created experiment 1"; git push
 
 # Run experiment on AWS
-terraform deploy
+logistician deploy
 
 # Sync data from AWS to experiment directory
 logistician sync
