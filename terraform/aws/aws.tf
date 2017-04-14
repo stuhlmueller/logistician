@@ -63,12 +63,19 @@ resource "aws_security_group" "logistician" {
   name = "logistician_group"
 
   ingress {
-    from_port = 0
-    to_port = 65535
+    from_port = 22  # ssh
+    to_port = 22
     protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    from_port = 2376  # docker
+    to_port = 2376
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
   egress {
     from_port = 0
     to_port = 65535
@@ -110,7 +117,7 @@ resource "aws_instance" "logistician" {
       "sudo mkdir /data",
       "sudo mkdir /data/logs",
       "sudo mkdir /data/config",
-      "sudo mkdir /data/results",      
+      "sudo mkdir /data/results",
       "sudo docker pull ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
       "sudo docker run -v /data:/data -e OPTIONS=\"${element(var.experiment_conditions, count.index)}\" -it ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
     ]
