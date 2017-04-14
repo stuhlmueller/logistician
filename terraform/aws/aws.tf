@@ -7,7 +7,8 @@ variable aws_region {
 }
 
 variable aws_ami {
-  default = "ami-e9643d89"  # ubuntu 16.10, us-west-1
+  default = "ami-a0edc8c0"  # ubuntu 16.10, us-west-1, +docker
+  # default = "ami-e9643d89"  # ubuntu 16.10, us-west-1
 }
 
 variable aws_ami_user {
@@ -98,10 +99,11 @@ resource "aws_instance" "logistician" {
   provisioner "local-exec" {
     command = "echo ${self.public_ip}, ${element(var.experiment_conditions, count.index)} >> machines.txt"
   }  
-  
-  provisioner "remote-exec" {
-    script = "${path.module}/../../scripts/setup-docker"
-  }
+
+  # only needed if image doesn't include docker:
+  # provisioner "remote-exec" {
+  #   script = "${path.module}/../../scripts/setup-docker"
+  # }
 
   provisioner "remote-exec" {
     inline = [
