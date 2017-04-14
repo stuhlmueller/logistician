@@ -1,7 +1,7 @@
 FROM python:3
 
 ENV project_git_url https://github.com/stuhlmueller/logistician.git
-ENV project_main_file examples/addition/main.py
+ENV experiment_cmd "python examples/addition/main.py"
 
 # Placeholders in case this Docker image isn't mounted with an appropriate volume at /data
 RUN mkdir /data
@@ -15,4 +15,4 @@ CMD if [ ! -d "/project" ]; then \
     cd /project && \
     git log -1 > /data/config/git.txt && \
     echo "$OPTIONS" > /data/config/options.txt && \
-    python /project/${project_main_file} $OPTIONS
+    eval "$experiment_cmd $OPTIONS"
