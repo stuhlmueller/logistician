@@ -144,22 +144,22 @@ def get_project_path(file_path):
 
 @click.command()
 @click.option('--options', '-o', help='Options to pass to experiment script', default='')
-@click.option('--volume/--no-volume', help='Mount project folder as /project volume in Docker', default=True)
+@click.option('--clone/--no-clone', help='Clone from remote repo, don\'t use project folder', default=False)
 @click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
                 default=lambda: os.getcwd())
-def run(experiment_path, volume=True, options=""):
+def run(experiment_path, clone=False, options=""):
     """
     Run experiment locally
     """
     params = load_params(experiment_path)
     experiment_name = params["experiment_name"]
     click.echo("Running {0} with options '{1}'".format(experiment_name, options))
-    if volume:
+    if clone:
+        verbose_call(["docker", "run", "-e", 'OPTIONS={0}'.format(options), "-it", experiment_name])
+    else:
         project_path = get_project_path(experiment_path)
         verbose_call(["docker", "run", "-v", "{0}:/project".format(project_path), "-e",
                       'OPTIONS={0}'.format(options), "-it", experiment_name])
-    else:
-        verbose_call(["docker", "run", "-e", 'OPTIONS={0}'.format(options), "-it", experiment_name])
     click.echo("Experiment done.")
 
 
