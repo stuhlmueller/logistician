@@ -176,7 +176,7 @@ def shell(experiment_path, volume=True):
     click.echo("Opening shell for {0}".format(experiment_name))
     if volume:
         project_path = get_project_path(experiment_path)
-        verbose_call(["docker", "run", "-v", "{0}:/project".format(project_path), "-it", experiment_name, "bash"])
+        verbose_call(["docker", "run", "-v", "{0}:/project".format(project_path), "-it", experiment_name, "bash",  "-c", "cd /project && bash"])
     else:
         verbose_call(["docker", "run", "-it", experiment_name, "bash"])    
     click.echo("Shell exited.")

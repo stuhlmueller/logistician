@@ -177,7 +177,6 @@ To interact with the dev environment, try this:
 
 ```sh
 docker shell
-cd /project
 ```
 
 ### Running experiments in the cloud
