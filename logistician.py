@@ -10,9 +10,12 @@ LOGISTICIAN_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 CONFIG_PATH = os.path.expanduser("~/.logistician/")
 
+
+
 def create_config_directory():
     if not os.path.exists(CONFIG_PATH):
         os.makedirs(CONFIG_PATH)
+
 
 def load_params(experiment_path):
     params_filename = os.path.join(experiment_path, "parameters.json")
@@ -21,20 +24,16 @@ def load_params(experiment_path):
     g.close()
     return params
 
+
 def echo_command_string(s):
     click.secho(s, fg='green')
+
 
 def verbose_call(cmd):
     echo_command_string(subprocess.list2cmdline(cmd))
     subprocess.call(cmd)
 
 
-@click.group()
-def cli():
-    pass
-
-
-@click.command()
 def config():
     """
     Interactively create config file
@@ -55,7 +54,6 @@ def config():
     f.close()
 
 
-@click.command()
 def create_ssh_key():
     """
     Create and store SSH key
@@ -68,15 +66,40 @@ def create_ssh_key():
         verbose_call(["ssh-keygen", "-t", "rsa", "-b", "4096", "-f", private_key_path, "-P", ""])
 
 
+def build(experiment_path):
+    """
+    Build Docker image for experiment
+    """
+    params = load_params(experiment_path)
+    experiment_name = params["experiment_name"]
+    click.echo("Building Docker image for {0}".format(experiment_name))
+    verbose_call(["docker", "build", "-t", experiment_name, experiment_path])
+    click.echo("Docker build done.")
+
+
+def get_project_path(file_path):
+    cmd = "cd '{0}' && git rev-parse --show-toplevel".format(file_path)
+    echo_command_string(cmd)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p.wait()
+    return p.stdout.read().strip()
+
+
+
+@click.group()
+def cli():
+    pass
+
+
 @click.command()
 @click.pass_context
 def setup(ctx):
     """
-    Do initial setup (config, ssh key)
+    Run initial interactive setup for Logistician
     """
     click.echo("This is the interactive setup for Logistician.")
-    ctx.invoke(config)
-    ctx.invoke(create_ssh_key)
+    config()
+    create_ssh_key()
     click.echo("Configuration done.")
 
 
@@ -101,19 +124,19 @@ def sync(experiment_path):
     aws_ami_user = params["aws_ami_user"]
 
     # Create data folder if it doesn't exist
-    verbose_call(["mkdir", "-p", os.path.join(experiment_path, "data/")])    
-    
+    verbose_call(["mkdir", "-p", os.path.join(experiment_path, "data/")])
+
     for (ip, condition) in machines:
 
         remote_address = "{0}@{1}".format(aws_ami_user, ip)
         local_path = os.path.join(experiment_path, "data/", condition)
-        
+
         click.echo("Syncing {0} to {1}".format(remote_address, local_path))
-        
+
         # Copy latest Docker logs to remote data directory
         verbose_call(["ssh", "-o", "StrictHostKeyChecking no", "-i", "~/.logistician/ssh-key", remote_address,
                       "sudo bash -c 'docker logs `docker ps -aq | head -n 1` > /data/logs/docker.txt'"])
-        
+
         # Retrieve remote data directory
         verbose_call(["rsync", "-azvv", "-e", "ssh -i ~/.logistician/ssh-key", "{0}:/data/".format(remote_address), local_path])
 
@@ -121,38 +144,15 @@ def sync(experiment_path):
 
 
 @click.command()
-@click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
-                default=lambda: os.getcwd())
-def build(experiment_path):
-    """
-    Build Docker image for experiment
-    """
-    params = load_params(experiment_path)
-    experiment_name = params["experiment_name"]
-    click.echo("Building Docker image for {0}".format(experiment_name))
-    verbose_call(["docker", "build", "-t", experiment_name, experiment_path])
-    click.echo("Docker build done.")
-
-
-def get_project_path(file_path):
-    cmd = "cd '{0}' && git rev-parse --show-toplevel".format(file_path)
-    echo_command_string(cmd)
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    p.wait()
-    return p.stdout.read().strip()
-
-
-@click.command()
 @click.option('--options', '-o', help='Options to pass to experiment script', default='')
 @click.option('--clone/--no-clone', help='Clone from remote repo, don\'t use project folder', default=False)
 @click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
                 default=lambda: os.getcwd())
-@click.pass_context
-def run(ctx, experiment_path, clone=False, options=""):
+def run(experiment_path, clone=False, options=""):
     """
     Run experiment locally
     """
-    ctx.invoke(build)
+    build(experiment_path)
     params = load_params(experiment_path)
     experiment_name = params["experiment_name"]
     click.echo("Running {0} with options '{1}'".format(experiment_name, options))
@@ -169,12 +169,11 @@ def run(ctx, experiment_path, clone=False, options=""):
 @click.option('--volume/--no-volume', help='Mount project folder as /project volume in Docker', default=True)
 @click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
                 default=lambda: os.getcwd())
-@click.pass_context
-def shell(ctx, experiment_path, volume=True):
+def shell(experiment_path, volume=True):
     """
-    Open shell in experiment Docker container
+    Open shell in experiment environment
     """
-    ctx.invoke(build)
+    build(experiment_path)
     params = load_params(experiment_path)
     experiment_name = params["experiment_name"]
     click.echo("Opening shell for {0}".format(experiment_name))
@@ -182,19 +181,18 @@ def shell(ctx, experiment_path, volume=True):
         project_path = get_project_path(experiment_path)
         verbose_call(["docker", "run", "-v", "{0}:/project".format(project_path), "-it", experiment_name, "bash",  "-c", "cd /project && bash"])
     else:
-        verbose_call(["docker", "run", "-it", experiment_name, "bash"])    
+        verbose_call(["docker", "run", "-it", experiment_name, "bash"])
     click.echo("Shell exited.")
 
 
 @click.command()
 @click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
                 default=lambda: os.getcwd())
-@click.pass_context
 def deploy(experiment_path):
     """
     Run experiment in the cloud
     """
-    ctx.invoke(build)
+    build(experiment_path)
     click.echo("Deploying {0} to cloud".format(experiment_path))
     params_file = os.path.join(experiment_path, "parameters.json")
     config_file = os.path.join(CONFIG_PATH, "config.json")
