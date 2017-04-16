@@ -226,13 +226,23 @@ def terminate(experiment_path):
     click.echo("Experiment terminated.")
 
 
-cli.add_command(setup)
-cli.add_command(config)
-cli.add_command(create_ssh_key)
-cli.add_command(sync)
-cli.add_command(build)
-cli.add_command(run)
-cli.add_command(shell)
+@click.command()
+def create():
+    """
+    Run interactive setup for a new experiment
+    """
+    click.echo("This will interactively create a new experiment")
+    experiment_name = click.prompt("Unique experiment name:") # this comes in as an argument
+    experiment_script = click.prompt("Experiment script relative to project root:")
+    project_git_url = click.prompt("Remote Git repository URL:")
+
+
+
+cli.add_command(create)
 cli.add_command(deploy)
+cli.add_command(run)
+cli.add_command(setup)
+cli.add_command(shell)
 cli.add_command(status)
+cli.add_command(sync)
 cli.add_command(terminate)
