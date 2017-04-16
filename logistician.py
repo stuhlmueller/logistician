@@ -206,6 +206,16 @@ def deploy(experiment_path):
 @click.command()
 @click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
                 default=lambda: os.getcwd())
+def status(experiment_path):
+    """
+    Show deployment status
+    """
+    verbose_call(["terraform", "show", os.path.join(experiment_path, "terraform.tfstate")])
+
+
+@click.command()
+@click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
+                default=lambda: os.getcwd())
 def terminate(experiment_path):
     """
     Terminate cloud experiment
@@ -226,4 +236,5 @@ cli.add_command(build)
 cli.add_command(run)
 cli.add_command(shell)
 cli.add_command(deploy)
+cli.add_command(status)
 cli.add_command(terminate)
