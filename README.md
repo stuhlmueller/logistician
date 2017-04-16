@@ -6,6 +6,45 @@
 
 Logistician makes it easy to prototype computational experiments locally and to deploy them to the cloud at scale. 
 
+## Interface
+
+```
+Usage: logistician [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  create     Run interactive setup for a new experiment
+  deploy     Run experiment in the cloud
+  run        Run experiment locally
+  setup      Run initial interactive setup for Logistician
+  shell      Open shell in experiment environment
+  status     Show deployment status
+  sync       Sync all data from cloud to local machine
+  terminate  Terminate cloud experiment
+```
+
+
+## Features
+
+- **Fast local development loop** 
+
+    For local development, Logistician directly uses code from your local project directory in order to make it easy to test changes without committing to repositories or constantly rebuilding docker images.
+    
+- **Reproducible experiments**
+
+    Logistician uses [Docker](https://www.docker.com/community-edition) to ensure that local and remote executions run in the same environment. Remote experiments always run based on particular commits in Git repositories.
+    
+- **Large-scale experiments in the cloud**
+
+    For exploring large parameter spaces, cloud deployment is parameterized by parameter sets. Logistician creates a cloud instance for each element of the set and uses [Terraform](https://www.terraform.io/) to automate setting up and shutting down large numbers of cloud machines.
+
+- **Transparently built on standard tools**
+
+    Logistician is a thin wrapper around Docker and Terraform and prints out all commands it issues. You can always switch to managing the containers and cloud instances using these native tools if additional functionality is needed.
+
+
 ## What it does
 
 You have a project, let's say it's called `adversarial-rnn`.
@@ -74,24 +113,6 @@ Shut down the instances:
 logistician terminate ./rnn-experiment-1
 ```
 
-
-## Features
-
-- **Fast local development loop** 
-
-    For local development, Logistician directly uses code from your local project directory in order to make it easy to test changes without committing to repositories or constantly rebuilding docker images.
-    
-- **Reproducible experiments**
-
-    Logistician uses [Docker](https://www.docker.com/community-edition) to ensure that local and remote executions run in the same environment. Remote experiments always run based on particular commits in Git repositories.
-    
-- **Large-scale experiments in the cloud**
-
-    For exploring large parameter spaces, cloud deployment is parameterized by parameter sets. Logistician creates a cloud instance for each element of the set and uses [Terraform](https://www.terraform.io/) to automate setting up and shutting down large numbers of cloud machines.
-
-- **Transparently built on standard tools**
-
-    Logistician is a thin wrapper around Docker and Terraform and prints out all commands it issues. You can always switch to managing the containers and cloud instances using these native tools if additional functionality is needed.
 
 ## Installation
 
@@ -217,7 +238,7 @@ Run `logistician terminate` in the experiment directory to clean up.
 
 **How can I log into the cloud instances manually?**
 
-Logistician saves the instance IP addresses in `ip-addresses.txt` in the experiment directory. Using these, you can log in using SSH:
+Logistician saves the instance IP addresses in `machines.txt` in the experiment directory. Using these, you can log in using SSH:
     
 ```sh
 ssh -i ~/.logistician/ssh-key ubuntu@54.153.54.33
@@ -233,5 +254,6 @@ Logistician currently does not support...
 
 ## To discuss
 
-- recording experimental setup (git commit id) and results (terminal log, files)
-- for docker builds that clone from github, either need to point to particular commits (preferable) or rebuild with --no-cache
+- Recording experimental setup (git commit id) and results (terminal log, files)
+- For docker builds that clone from github, either need to point to particular commits (preferable) or rebuild with --no-cache
+- Might want to use Docker Machine to orchestrate cloud deployments
