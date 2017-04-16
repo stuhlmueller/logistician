@@ -147,10 +147,12 @@ def get_project_path(file_path):
 @click.option('--clone/--no-clone', help='Clone from remote repo, don\'t use project folder', default=False)
 @click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
                 default=lambda: os.getcwd())
-def run(experiment_path, clone=False, options=""):
+@click.pass_context
+def run(ctx, experiment_path, clone=False, options=""):
     """
     Run experiment locally
     """
+    ctx.invoke(build)
     params = load_params(experiment_path)
     experiment_name = params["experiment_name"]
     click.echo("Running {0} with options '{1}'".format(experiment_name, options))
@@ -167,10 +169,12 @@ def run(experiment_path, clone=False, options=""):
 @click.option('--volume/--no-volume', help='Mount project folder as /project volume in Docker', default=True)
 @click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
                 default=lambda: os.getcwd())
-def shell(experiment_path, volume=True):
+@click.pass_context
+def shell(ctx, experiment_path, volume=True):
     """
     Open shell in experiment Docker container
     """
+    ctx.invoke(build)
     params = load_params(experiment_path)
     experiment_name = params["experiment_name"]
     click.echo("Opening shell for {0}".format(experiment_name))
@@ -182,16 +186,15 @@ def shell(experiment_path, volume=True):
     click.echo("Shell exited.")
 
 
-def terraform_command():
-    pass
-    
 @click.command()
 @click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
                 default=lambda: os.getcwd())
+@click.pass_context
 def deploy(experiment_path):
     """
     Run experiment in the cloud
     """
+    ctx.invoke(build)
     click.echo("Deploying {0} to cloud".format(experiment_path))
     params_file = os.path.join(experiment_path, "parameters.json")
     config_file = os.path.join(CONFIG_PATH, "config.json")
