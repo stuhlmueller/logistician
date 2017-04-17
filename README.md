@@ -63,10 +63,12 @@ logistician create rnn-experiment-1
 Logistician then asks you some questions about your experiment:
 
 ```
-This will interactively create a new experiment.
+This script will interactively create a new experiment stored at:
+/home/jane/adversarial-rnn/experiments/rnn-experiment-1
 
-Experiment script relative to project root:  python src/run-rnn.py
-Remote Git repository URL:                   https://github.com/jane/adversarial-rnn.git
+Globally unique experiment name [rnn-experiment-1]:
+Remote Git URL [https://github.com/jane/adversarial-rnn.git]:
+Experiment command (relative to project root): python src/run-rnn.py
 
 Experiment created.
 ```
@@ -75,7 +77,7 @@ Now the experiments folder contains a sub-folder `rnn-experiment-1` with two fil
 - `Dockerfile` describes the software environment for your experiment
 - `parameters.json` describes the cloud machine setup (instance type, region, etc) and experiment conditions
 
-These two files are sufficient to run your experiment locally and in the cloud.
+These two files are sufficient to run your experiment locally and in the cloud. You can edit the `Dockerfile` to set up the environment for your experiment.
 
 To run it locally, passing arguments to your experiment script:
 

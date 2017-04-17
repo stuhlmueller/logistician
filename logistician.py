@@ -251,6 +251,7 @@ def create(experiment_path):  # project_path, experiment_name, experiment_script
     """
     Run interactive setup for a new experiment
     """
+    
     if not experiment_path:
         experiment_path = click.prompt("Path for new experiment", default=os.path.join(os.getcwd(), random_id()))
 
@@ -258,7 +259,8 @@ def create(experiment_path):  # project_path, experiment_name, experiment_script
         click.echo("Experiment path should not exist")
         return
 
-    click.echo("New experiment path: {0}".format(os.path.abspath(experiment_path)))
+    click.echo("This script will interactively create a new experiment stored at:")    
+    click.echo(os.path.abspath(experiment_path) + "\n")
     
     # Get a few parameters we need
     dirname = os.path.basename(os.path.dirname(os.path.join(experiment_path, '')))
@@ -290,6 +292,7 @@ def create(experiment_path):  # project_path, experiment_name, experiment_script
     write_to_file(parameters_path, parameters_contents)
     
     # Instruct user to edit Dockerfile
+    click.echo("\nExperiment created.")
     click.echo("\nYou can now edit the Dockerfile and parameters:")
     click.echo("Dockerfile: {0}".format(dockerfile_path))
     click.echo("Parameters: {0}".format(parameters_path))
