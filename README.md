@@ -141,9 +141,6 @@ To make sure everything is set up correctly, try running the example experiment:
 # Go to experiment folder
 cd logistician/examples/addition/experiments/1
 
-# Build Docker image
-logistician build
-
 # Run locally (directly using project directory)
 logistician run -o "1 2"
 
@@ -186,9 +183,6 @@ Make sure to preserve the switch in `CMD` that supports both local and remote pr
 ```sh
 # Go to project directory
 cd /home/jane/my-project
-
-# Build Docker image (once, and whenever external dependencies change)
-logistician build experiments/1
 
 # Make changes to files in my-project
 
