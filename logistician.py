@@ -4,12 +4,29 @@ import click
 import json
 import os
 import subprocess
+import uuid
 
 
 LOGISTICIAN_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 CONFIG_PATH = os.path.expanduser("~/.logistician/")
 
+
+def random_id():
+     return str(uuid.uuid4()).split("-")[0]
+
+
+def write_to_file(path, contents):
+    f = open(path, "w")
+    f.write(contents)
+    f.close()
+
+
+def from_template_file(template_file, vars):
+    f = open(template_file, "r")
+    template = f.read()
+    f.close()
+    return template % vars
 
 
 def create_config_directory():
@@ -85,6 +102,8 @@ def get_project_path(file_path):
     return p.stdout.read().strip()
 
 
+ExperimentPathType = click.Path(exists=True, file_okay=False, dir_okay=True, writable=True, readable=True, resolve_path=True)
+
 
 @click.group()
 def cli():
@@ -104,8 +123,7 @@ def setup(ctx):
 
 
 @click.command()
-@click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
-                default=lambda: os.getcwd())
+@click.argument('experiment_path', type=ExperimentPathType, default=lambda: os.getcwd())
 def sync(experiment_path):
     """
     Sync all data from cloud to local machine
@@ -146,8 +164,7 @@ def sync(experiment_path):
 @click.command()
 @click.option('--options', '-o', help='Options to pass to experiment script', default='')
 @click.option('--clone/--no-clone', help='Clone from remote repo, don\'t use project folder', default=False)
-@click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
-                default=lambda: os.getcwd())
+@click.argument('experiment_path', type=ExperimentPathType, default=lambda: os.getcwd())
 def run(experiment_path, clone=False, options=""):
     """
     Run experiment locally
@@ -167,8 +184,7 @@ def run(experiment_path, clone=False, options=""):
 
 @click.command()
 @click.option('--volume/--no-volume', help='Mount project folder as /project volume in Docker', default=True)
-@click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
-                default=lambda: os.getcwd())
+@click.argument('experiment_path', type=ExperimentPathType, default=lambda: os.getcwd())
 def shell(experiment_path, volume=True):
     """
     Open shell in experiment environment
@@ -186,8 +202,7 @@ def shell(experiment_path, volume=True):
 
 
 @click.command()
-@click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
-                default=lambda: os.getcwd())
+@click.argument('experiment_path', type=ExperimentPathType, default=lambda: os.getcwd())
 def deploy(experiment_path):
     """
     Run experiment in the cloud
@@ -202,8 +217,7 @@ def deploy(experiment_path):
 
 
 @click.command()
-@click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
-                default=lambda: os.getcwd())
+@click.argument('experiment_path', type=ExperimentPathType, default=lambda: os.getcwd())
 def status(experiment_path):
     """
     Show deployment status
@@ -212,8 +226,7 @@ def status(experiment_path):
 
 
 @click.command()
-@click.argument('experiment_path', type=click.Path(exists=True, dir_okay=True, writable=True, readable=True, resolve_path=True),
-                default=lambda: os.getcwd())
+@click.argument('experiment_path', type=ExperimentPathType, default=lambda: os.getcwd())
 def terminate(experiment_path):
     """
     Terminate cloud experiment
@@ -226,16 +239,62 @@ def terminate(experiment_path):
     click.echo("Experiment terminated.")
 
 
+# @click.option('--project_path', prompt="Project root", default=lambda: get_project_path(os.getcwd()))
+# @click.option('--experiment_name', prompt="Unique experiment name", default=lambda: "experiment-{0}".format(random_id()))
+# @click.option('--experiment_script', prompt="Experiment script relative to project root",
+#               type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True))
+
+
 @click.command()
-def create():
+@click.argument('experiment_path', type=click.Path(exists=False), default=lambda: None)
+def create(experiment_path):  # project_path, experiment_name, experiment_script
     """
     Run interactive setup for a new experiment
     """
-    click.echo("This will interactively create a new experiment")
-    experiment_name = click.prompt("Unique experiment name:") # this comes in as an argument
-    experiment_script = click.prompt("Experiment script relative to project root:")
-    project_git_url = click.prompt("Remote Git repository URL:")
+    if not experiment_path:
+        experiment_path = click.prompt("Path for new experiment", default=os.path.join(os.getcwd(), random_id()))
 
+    if os.path.exists(experiment_path):
+        click.echo("Experiment path should not exist")
+        return
+
+    click.echo("New experiment path: {0}".format(os.path.abspath(experiment_path)))
+    
+    # Get a few parameters we need
+    dirname = os.path.basename(os.path.dirname(os.path.join(experiment_path, '')))
+    git_remote_url = subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).strip()
+    
+    experiment_name = click.prompt("Globally unique experiment name", default=dirname)
+    project_git_url = click.prompt("Remote Git URL", default=git_remote_url)
+    experiment_cmd = click.prompt("Experiment command (relative to project root)")
+    
+    settings = {
+        "experiment_name": experiment_name,
+        "project_git_url": project_git_url,
+        "experiment_cmd": experiment_cmd
+    }
+    
+    # Create folder for new experiment
+    os.makedirs(experiment_path)
+    
+    # Create Dockerfile
+    dockerfile_template_path = os.path.join(LOGISTICIAN_ROOT, "templates/experiment/Dockerfile")
+    dockerfile_contents = from_template_file(dockerfile_template_path, settings)
+    dockerfile_path = os.path.join(experiment_path, "Dockerfile")
+    write_to_file(dockerfile_path, dockerfile_contents)
+    
+    # Create parameters.json
+    parameters_template_path = os.path.join(LOGISTICIAN_ROOT, "templates/experiment/parameters.json")
+    parameters_contents = from_template_file(parameters_template_path, settings)
+    parameters_path = os.path.join(experiment_path, "parameters.json")
+    write_to_file(parameters_path, parameters_contents)
+    
+    # Instruct user to edit Dockerfile
+    click.echo("\nYou can now edit the Dockerfile and parameters:")
+    click.echo("Dockerfile: {0}".format(dockerfile_path))
+    click.echo("Parameters: {0}".format(parameters_path))
+    click.echo("\nOnce done editing, you can run your experiment:")
+    click.echo("logistician run {0}".format(os.path.relpath(experiment_path)))
 
 
 cli.add_command(create)
