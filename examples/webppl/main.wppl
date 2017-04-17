@@ -1,0 +1,19 @@
+var p = _.toNumber(_.last(process.argv));
+
+var geometric = function(p) {
+  if (flip(p)) {
+    return 0;
+  } else {
+    return 1 + geometric(p);
+  }
+};
+
+var result = expectation(Infer({
+  model() {
+    return geometric(p);
+  },
+  method: 'enumerate',
+  maxExecutions: 20
+}));
+
+result;
