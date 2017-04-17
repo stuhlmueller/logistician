@@ -16,4 +16,6 @@ var result = expectation(Infer({
   maxExecutions: 20
 }));
 
-result;
+console.log({ result });
+
+fs.write("/data/results/result.txt", _.toString(result))
