@@ -119,7 +119,7 @@ resource "aws_instance" "logistician" {
       "sudo mkdir /data/config",
       "sudo mkdir /data/results",
       "sudo docker pull ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
-      "sudo docker run -v /data:/data -e OPTIONS=\"${element(var.experiment_conditions, count.index)}\" -it ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
+      "sudo docker run -d -v /data:/data -e OPTIONS=\"${element(var.experiment_conditions, count.index)}\" -it ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
     ]
   }
 
