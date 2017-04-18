@@ -123,15 +123,14 @@ resource "aws_instance" "logistician" {
     ]
   }
 
-  provisioner "local-exec" {
-    command = "echo \"THE EXPERIMENT IS DONE.\""
-  }
-    
   # provisioner on destroy
 
   depends_on = ["null_resource.push_docker_image"]
 }
 
-
-# Add a resource that depends on all aws instances being done,
-# print out final message
+resource "null_resource" "final" {
+  provisioner "local-exec" {
+    command = "echo 'All experiments running.'"
+  }
+  depends_on = ["aws_instance.logistician"]
+}
