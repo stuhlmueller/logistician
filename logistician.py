@@ -3,6 +3,7 @@
 import click
 import json
 import os
+import shutil
 import subprocess
 import uuid
 
@@ -174,7 +175,7 @@ def run(experiment_path, clone, options, data_readonly):
     params = load_params(experiment_path)
     experiment_name = params["experiment_name"]
     click.echo("Running {0} with options '{1}'".format(experiment_name, options))
-    
+
     if clone:
         # If we don't mount project volume, it will be cloned
         clone_args = []
@@ -186,7 +187,7 @@ def run(experiment_path, clone, options, data_readonly):
         data_args = ["-v", "{0}:/data:ro".format(data_readonly)]
     else:
         data_args = []
-    
+
     cmd = ["docker", "run"] + clone_args + data_args + ["-e", "OPTIONS={0}".format(options), "-it", experiment_name]
     verbose_call(cmd)
     click.echo("Experiment done.")
@@ -250,8 +251,9 @@ def terminate(experiment_path):
 
 
 @click.command()
+@click.option('--base', help='Path to previous experiment used as base (optional)', type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True, resolve_path=True), default=None)
 @click.argument('experiment_path', type=click.Path(exists=False), default=lambda: None)
-def create(experiment_path):  # project_path, experiment_name, experiment_script
+def create(experiment_path, base):
     """
     Run interactive setup for a new experiment
     """
@@ -266,11 +268,41 @@ def create(experiment_path):  # project_path, experiment_name, experiment_script
     click.echo("This script will interactively create a new experiment stored at:")
     click.echo(os.path.abspath(experiment_path) + "\n")
 
-    # Get a few parameters we need
-    dirname = os.path.basename(os.path.dirname(os.path.join(experiment_path, '')))
-    git_remote_url = subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).strip()
+    # Create folder for new experiment
+    os.makedirs(experiment_path)
 
+    # Get experiment name
+    dirname = os.path.basename(os.path.dirname(os.path.join(experiment_path, '')))
     experiment_name = click.prompt("Globally unique experiment name", default=dirname)
+
+    if base:
+        create_derived_experiment(experiment_path, experiment_name, base)
+    else:
+        create_fresh_experiment(experiment_path, experiment_name)
+
+
+def create_derived_experiment(experiment_path, experiment_name, base):
+
+    # Copy over Dockerfile
+    dockerfile_path = os.path.join(experiment_path, "Dockerfile")
+    shutil.copyfile(os.path.join(base, "Dockerfile"), dockerfile_path);
+
+    # Copy over parameter.json, replacing experiment_name with new one
+    f = open(os.path.join(base, "parameters.json"))
+    params = json.load(f)
+    f.close()
+    params["experiment_name"] = experiment_name
+    parameters_path = os.path.join(experiment_path, "parameters.json")
+    f = open(parameters_path, "w")
+    json.dump(params, f, indent=2, sort_keys=True)
+    f.close()
+
+    show_experiment_info(experiment_path, dockerfile_path, parameters_path)
+
+
+def create_fresh_experiment(experiment_path, experiment_name):
+
+    git_remote_url = subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).strip()
     project_git_url = click.prompt("Remote Git URL", default=git_remote_url)
     experiment_cmd = click.prompt("Experiment command (relative to project root)")
 
@@ -279,9 +311,6 @@ def create(experiment_path):  # project_path, experiment_name, experiment_script
         "project_git_url": project_git_url,
         "experiment_cmd": experiment_cmd
     }
-
-    # Create folder for new experiment
-    os.makedirs(experiment_path)
 
     # Create Dockerfile
     dockerfile_template_path = os.path.join(LOGISTICIAN_ROOT, "templates/experiment/Dockerfile")
@@ -295,6 +324,10 @@ def create(experiment_path):  # project_path, experiment_name, experiment_script
     parameters_path = os.path.join(experiment_path, "parameters.json")
     write_to_file(parameters_path, parameters_contents)
 
+    show_experiment_info(experiment_path, dockerfile_path, parameters_path)
+
+
+def show_experiment_info(experiment_path, dockerfile_path, parameters_path):
     # Instruct user to edit Dockerfile
     click.echo("\nExperiment created.")
     click.echo("\nYou can now edit the Dockerfile and parameters:")
