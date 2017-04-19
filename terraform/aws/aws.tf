@@ -55,12 +55,12 @@ provider "aws" {
 }
 
 resource "aws_key_pair" "logistician" {
-  key_name   = "logistician-ssh-key"
+  key_name   = "logistician-${var.experiment_name}-ssh-key"
   public_key = "${file("~/.logistician/ssh-key.pub")}"
 }
 
 resource "aws_security_group" "logistician" {
-  name = "logistician_group"
+  name = "logistician-${var.experiment_name}-group"
 
   ingress {
     from_port = 22  # ssh
@@ -91,7 +91,7 @@ resource "aws_security_group" "logistician" {
 resource "aws_instance" "logistician" {
   ami           = "${var.aws_ami}"
   instance_type = "${var.aws_instance_type}"
-  key_name      = "logistician-ssh-key"
+  key_name      = "logistician-${var.experiment_name}-ssh-key"
   vpc_security_group_ids = ["${aws_security_group.logistician.id}"]
 
   count = "${length(var.experiment_conditions)}"
