@@ -163,9 +163,10 @@ def sync(experiment_path):
 
 @click.command()
 @click.option('--options', '-o', help='Options to pass to experiment script', default='')
+@click.option('--data_readonly', help='Data folder to read from (optional)', type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=False, readable=True, resolve_path=True), default=None)
 @click.option('--clone/--no-clone', help='Clone from remote repo, don\'t use project folder', default=False)
 @click.argument('experiment_path', type=ExperimentPathType, default=lambda: os.getcwd())
-def run(experiment_path, clone=False, options=""):
+def run(experiment_path, clone, options, data_readonly):
     """
     Run experiment locally
     """
@@ -173,12 +174,21 @@ def run(experiment_path, clone=False, options=""):
     params = load_params(experiment_path)
     experiment_name = params["experiment_name"]
     click.echo("Running {0} with options '{1}'".format(experiment_name, options))
+    
     if clone:
-        verbose_call(["docker", "run", "-e", 'OPTIONS={0}'.format(options), "-it", experiment_name])
+        # If we don't mount project volume, it will be cloned
+        clone_args = []
     else:
         project_path = get_project_path(experiment_path)
-        verbose_call(["docker", "run", "-v", "{0}:/project".format(project_path), "-e",
-                      'OPTIONS={0}'.format(options), "-it", experiment_name])
+        clone_args = ["-v", "{0}:/project".format(project_path)]
+
+    if data_readonly:
+        data_args = ["-v", "{0}:/data:ro".format(data_readonly)]
+    else:
+        data_args = []
+    
+    cmd = ["docker", "run"] + clone_args + data_args + ["-e", "OPTIONS={0}".format(options), "-it", experiment_name]
+    verbose_call(cmd)
     click.echo("Experiment done.")
 
 
@@ -245,7 +255,7 @@ def create(experiment_path):  # project_path, experiment_name, experiment_script
     """
     Run interactive setup for a new experiment
     """
-    
+
     if not experiment_path:
         experiment_path = click.prompt("Path for new experiment", default=os.path.join(os.getcwd(), random_id()))
 
@@ -253,38 +263,38 @@ def create(experiment_path):  # project_path, experiment_name, experiment_script
         click.echo("Experiment path should not exist")
         return
 
-    click.echo("This script will interactively create a new experiment stored at:")    
+    click.echo("This script will interactively create a new experiment stored at:")
     click.echo(os.path.abspath(experiment_path) + "\n")
-    
+
     # Get a few parameters we need
     dirname = os.path.basename(os.path.dirname(os.path.join(experiment_path, '')))
     git_remote_url = subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).strip()
-    
+
     experiment_name = click.prompt("Globally unique experiment name", default=dirname)
     project_git_url = click.prompt("Remote Git URL", default=git_remote_url)
     experiment_cmd = click.prompt("Experiment command (relative to project root)")
-    
+
     settings = {
         "experiment_name": experiment_name,
         "project_git_url": project_git_url,
         "experiment_cmd": experiment_cmd
     }
-    
+
     # Create folder for new experiment
     os.makedirs(experiment_path)
-    
+
     # Create Dockerfile
     dockerfile_template_path = os.path.join(LOGISTICIAN_ROOT, "templates/experiment/Dockerfile")
     dockerfile_contents = from_template_file(dockerfile_template_path, settings)
     dockerfile_path = os.path.join(experiment_path, "Dockerfile")
     write_to_file(dockerfile_path, dockerfile_contents)
-    
+
     # Create parameters.json
     parameters_template_path = os.path.join(LOGISTICIAN_ROOT, "templates/experiment/parameters.json")
     parameters_contents = from_template_file(parameters_template_path, settings)
     parameters_path = os.path.join(experiment_path, "parameters.json")
     write_to_file(parameters_path, parameters_contents)
-    
+
     # Instruct user to edit Dockerfile
     click.echo("\nExperiment created.")
     click.echo("\nYou can now edit the Dockerfile and parameters:")
