@@ -22,6 +22,8 @@ CMD if [ ! -d "/project" ]; then \
       git clone ${project_git_url} /project; \
     fi && \
     cd /project && \
-    git log -1 > /data/config/git.txt && \
-    echo "$OPTIONS" > /data/config/options.txt && \
+    if [ -w /data/ ]; then \
+      git log -1 > /data/config/git.txt && \
+      echo "$OPTIONS" > /data/config/options.txt; \
+    fi && \    
     eval "$experiment_cmd $OPTIONS"
