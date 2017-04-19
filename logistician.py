@@ -239,12 +239,6 @@ def terminate(experiment_path):
     click.echo("Experiment terminated.")
 
 
-# @click.option('--project_path', prompt="Project root", default=lambda: get_project_path(os.getcwd()))
-# @click.option('--experiment_name', prompt="Unique experiment name", default=lambda: "experiment-{0}".format(random_id()))
-# @click.option('--experiment_script', prompt="Experiment script relative to project root",
-#               type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True))
-
-
 @click.command()
 @click.argument('experiment_path', type=click.Path(exists=False), default=lambda: None)
 def create(experiment_path):  # project_path, experiment_name, experiment_script
