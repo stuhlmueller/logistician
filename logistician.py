@@ -52,6 +52,14 @@ def verbose_call(cmd):
     subprocess.call(cmd)
 
 
+def local_docker_command(params):
+     return params.get("local_docker_command", "docker")
+
+
+def remote_docker_command(params):
+     return params.get("remote_docker_command", "docker")
+
+
 def config():
     """
     Interactively create config file
@@ -91,7 +99,7 @@ def build(experiment_path):
     params = load_params(experiment_path)
     experiment_name = params["experiment_name"]
     click.echo("Building Docker image for {0}".format(experiment_name))
-    verbose_call(["docker", "build", "-t", experiment_name, experiment_path])
+    verbose_call([local_docker_command(params), "build", "-t", experiment_name, experiment_path])
     click.echo("Docker build done.")
 
 
@@ -145,6 +153,8 @@ def sync(experiment_path):
     # Create data folder if it doesn't exist
     verbose_call(["mkdir", "-p", os.path.join(experiment_path, "data/")])
 
+    docker_command = remote_docker_command(params)
+
     for (ip, condition) in machines:
 
         remote_address = "{0}@{1}".format(aws_ami_user, ip)
@@ -154,7 +164,7 @@ def sync(experiment_path):
 
         # Copy latest Docker logs to remote data directory
         verbose_call(["ssh", "-o", "StrictHostKeyChecking no", "-i", "~/.logistician/ssh-key", remote_address,
-                      "sudo bash -c 'docker logs `docker ps -aq | head -n 1` > /data/logs/docker.txt'"])
+                      "sudo bash -c '" + docker_command + " logs `" + docker_command + " ps -aq | head -n 1` > /data/logs/docker.txt'"])
 
         # Retrieve remote data directory
         verbose_call(["rsync", "-azvv", "-e", "ssh -i ~/.logistician/ssh-key", "{0}:/data/".format(remote_address), local_path])
@@ -188,7 +198,7 @@ def run(experiment_path, clone, options, data_readonly):
     else:
         data_args = []
 
-    cmd = ["docker", "run"] + clone_args + data_args + ["-e", "OPTIONS={0}".format(options), "-it", experiment_name]
+    cmd = [local_docker_command(params), "run"] + clone_args + data_args + ["-e", "OPTIONS={0}".format(options), "-it", experiment_name]
     verbose_call(cmd)
     click.echo("Experiment done.")
 
@@ -203,12 +213,14 @@ def shell(experiment_path, volume=True):
     build(experiment_path)
     params = load_params(experiment_path)
     experiment_name = params["experiment_name"]
+    docker_command = local_docker_command(params)
     click.echo("Opening shell for {0}".format(experiment_name))
     if volume:
         project_path = get_project_path(experiment_path)
-        verbose_call(["docker", "run", "-v", "{0}:/project".format(project_path), "-it", experiment_name, "bash",  "-c", "cd /project && bash"])
+        verbose_call([docker_command, "run", "-v", "{0}:/project".format(project_path), "-it",
+                      experiment_name, "bash",  "-c", "cd /project && bash"])
     else:
-        verbose_call(["docker", "run", "-it", experiment_name, "bash"])
+        verbose_call([docker_command, "run", "-it", experiment_name, "bash"])
     click.echo("Shell exited.")
 
 

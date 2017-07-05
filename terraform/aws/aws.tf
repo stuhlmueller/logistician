@@ -25,6 +25,12 @@ variable aws_access_key {}
 variable aws_secret_key {}
 variable docker_username {}
 variable docker_repository {}
+variable local_docker_command {
+  default = "docker"
+}
+variable remote_docker_command {
+  default = "docker"
+}
 
 
 resource "null_resource" "reset" {
@@ -35,7 +41,7 @@ resource "null_resource" "reset" {
 
 resource "null_resource" "build_docker_image" {
   provisioner "local-exec" {
-    command = "docker build -t ${var.experiment_name} ."
+    command = "${var.local_docker_command} build -t ${var.experiment_name} ."
   }
   depends_on = ["null_resource.reset"]
 }
@@ -43,8 +49,8 @@ resource "null_resource" "build_docker_image" {
 resource "null_resource" "push_docker_image" {
   provisioner "local-exec" {
     command = <<EOF
-      docker tag ${var.experiment_name} ${var.docker_username}/${var.docker_repository}:${var.experiment_name} && 
-      docker push ${var.docker_username}/${var.docker_repository}:${var.experiment_name}
+      ${var.local_docker_command} tag ${var.experiment_name} ${var.docker_username}/${var.docker_repository}:${var.experiment_name} && 
+      ${var.local_docker_command} push ${var.docker_username}/${var.docker_repository}:${var.experiment_name}
     EOF
   }
   depends_on = ["null_resource.build_docker_image"]
@@ -118,8 +124,8 @@ resource "aws_instance" "logistician" {
       "sudo mkdir /data/logs",
       "sudo mkdir /data/config",
       "sudo mkdir /data/results",
-      "sudo docker pull ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
-      "sudo docker run -d -v /data:/data -e OPTIONS=\"${element(var.experiment_conditions, count.index)}\" -it ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
+      "sudo ${var.remote_docker_command} pull ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
+      "sudo ${var.remote_docker_command} run -d -v /data:/data -e OPTIONS=\"${element(var.experiment_conditions, count.index)}\" -it ${var.docker_username}/${var.docker_repository}:${var.experiment_name}",
     ]
   }
 
