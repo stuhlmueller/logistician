@@ -15,6 +15,10 @@ variable aws_ami_user {
   default = "ubuntu"
 }
 
+variable aws_root_volume_size {
+  default = 6
+}
+
 variable experiment_name {}
 
 variable experiment_conditions {
@@ -102,6 +106,10 @@ resource "aws_instance" "logistician" {
 
   count = "${length(var.experiment_conditions)}"
 
+  root_block_device {
+    volume_size = "${var.aws_root_volume_size}"
+  }
+  
   connection {
     type        = "ssh"
     user        = "${var.aws_ami_user}"

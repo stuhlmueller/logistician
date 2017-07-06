@@ -7,6 +7,7 @@
   "aws_ami_user": "ubuntu", 
   "aws_instance_type": "p2.xlarge", 
   "aws_region": "us-west-2",
+  "aws_root_volume_size": 30,
   
   "experiment_name": "pytorch-gpu-1",
   "experiment_conditions": [""],
