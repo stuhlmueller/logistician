@@ -1,0 +1,14 @@
+{
+  "local_docker_command": "docker",
+  "remote_docker_command": "nvidia-docker",
+  
+  "aws_ami": "ami-09726170",
+  "aws_ami_comment": "Canonical, Ubuntu, 16.04 LTS, amd64 xenial image build on 2017-04-14, us-west-2, p2, nvidia-docker", 
+  "aws_ami_user": "ubuntu", 
+  "aws_instance_type": "p2.xlarge", 
+  "aws_region": "us-west-2",
+  
+  "experiment_name": "pytorch-gpu-1",
+  "experiment_conditions": [""],
+  "experiment_conditions_comment": "Add one string per condition. This string is passed to the main experiment script as an argument."
+}
