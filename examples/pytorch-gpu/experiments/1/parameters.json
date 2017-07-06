@@ -10,6 +10,6 @@
   "aws_root_volume_size": 30,
   
   "experiment_name": "pytorch-gpu-1",
-  "experiment_conditions": [""],
+  "experiment_conditions": ["1"],
   "experiment_conditions_comment": "Add one string per condition. This string is passed to the main experiment script as an argument."
 }
